@@ -1,0 +1,26 @@
+
+['age'].fillna(df.groupby('job')['age'].transform('median'), inplace=True)
+### random forest
+from sklearn.ensemble import RandomForestClassifier
+
+rf = RandomForestClassifier(n_estimators=100, oob_score=True, random_state=123456)
+rf.fit(X_train, y_train)
+
+#### accuracy
+from sklearn.metrics import confusion_matrix
+
+cm = pd.DataFrame(confusion_matrix(y_test, predicted), columns=iris.target_names, index=iris.target_names)
+sns.heatmap(cm, annot=True)
+
+
+###clustering
+df = pd.DataFrame(colums=('x','y'))
+sns.lmplot('x','y', data=df, fit_reg = False, scatter_kws={"s":200})
+data_points = df.values
+kmeans = KMeans(n_clusters=3).fit(data_points)
+kmean.labels
+df['cluster_id'] = kmeans.labels
+sns.lmplot('x','y', data=df, fit_reg = False, scatter_kws={"s":150},
+hue="cluster_id")
+
+결측값처리,clustering,분류,예측, 전처리 이네가지만!!! sampling?
