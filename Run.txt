@@ -1,0 +1,213 @@
+import pandas as pd
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+train = pd.read_csv('train.csv', parse_dates=["datetime"])
+test = pd.read_csv('test.csv', parse_dates=["datetime"])
+
+test.head()
+test.info()
+test.describe()
+
+train.isnull().sum()
+
+train["year"] = train["datetime"].dt.year
+train["month"] = train["datetime"].dt.month
+train["day"] = train["datetime"].dt.day
+train["hour"] = train["datetime"].dt.hour
+train["week"] = train["datetime"].dt.dayofweek
+
+figure, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2, ncols=2)
+figure.set_size_inches(18,8)
+
+sns.barplot(data=train, x="year",y="count", ax=ax1)
+sns.barplot(data=train, x="month",y="count", ax=ax2)
+sns.barplot(data=train, x="day",y="count", ax=ax3)
+sns.barplot(data=train, x="hour",y="count", ax=ax4)
+
+fig, ((ax0,ax1),(ax2,ax3)) = plt.subplots(nrows=2, ncols=2)
+fig.set_size_inches(12,10)
+sns.boxplot(data=train,y="count",orient="v",ax=ax0)
+sns.boxplot(data=train,y="count",x="season",orient="v",ax=ax1)
+sns.boxplot(data=train,y="count",x="hour",orient="v",ax=ax2)
+sns.boxplot(data=train,y="count",x="workingday",orient="v",ax=ax3)
+
+fig,(ax1,ax2,ax3,ax4,ax5) = plt.subplots(nrows=5)
+fig.set_size_inches(18,25)
+
+sns.pointplot(data=train, x="hour", y="count", ax=ax1)
+sns.pointplot(data=train, x="hour", y="count", hue="workingday", ax=ax2)
+sns.pointplot(data=train, x="hour", y="count",hue="week", ax=ax3)
+sns.pointplot(data=train, x="hour", y="count",hue="weather", ax=ax4)
+sns.pointplot(data=train, x="hour", y="count",hue="season", ax=ax5)
+
+##상관성 분석
+corrMatt = train[["temp","atemp","casual","registered","humidity","windspeed","count"]]
+corrMatt = corrMatt.corr()
+print(corrMatt)
+
+fig,(ax1,ax2,ax3) = plt.subplots(ncols=3)
+sns.regplot(x='temp', y='count', data=train, ax=ax1)
+sns.regplot(x='windspeed', y='count', data=train, ax=ax2)
+sns.regplot(x='humidity', y='count', data=train, ax=ax3)
+
+def concat_year_month(datetime):
+    return "{0}-{1}".format(datetime.year, datetime.month)
+
+train['year_month'] = train["datetime"].apply(concat_year_month)
+train['year_month'].head()
+
+## 이상치 제거
+sns.barplot(data=train, x="year_month",y="count")
+trainNoOulier = train[np.abs(train["count"]-train["count"].mean()) <=(3*train["count"])]
+
+
+from sklearn.ensemble import RandomForestClassifier
+train = pd.read_csv('train.csv', parse_dates=["datetime"])
+test = pd.read_csv('test.csv', parse_dates=["datetime"])
+train["year"] = train["datetime"].dt.year
+train["month"] = train["datetime"].dt.month
+train["day"] = train["datetime"].dt.day
+train["hour"] = train["datetime"].dt.hour
+train["week"] = train["datetime"].dt.dayofweek
+
+test["year"] = test["datetime"].dt.year
+test["month"] = test["datetime"].dt.month
+test["day"] = test["datetime"].dt.day
+test["hour"] = test["datetime"].dt.hour
+test["week"] = test["datetime"].dt.dayofweek
+
+
+### 채워넣기 windspeed
+#train.loc[train["windspeed"] == 0,"windspeed"] = train["windspeed"].mean()
+def predict_windspeed(data):
+    dataWind0 = data.loc[data['windspeed']==0]
+    dataWindNot0 = data.loc[data['windspeed']!=0]
+    wCol=["season","holiday","workingday","weather","temp","humidity"]
+    dataWindNot0["windspeed"] = dataWindNot0["windspeed"].astype("str")
+    rfModel_wind = RandomForestClassifier()
+    #학습시킨다
+    rfModel_wind.fit(dataWindNot0[wCol], dataWindNot0["windspeed"])
+    wind0Value = rfModel_wind.predict(dataWind0[wCol])
+
+    predictWind0 = dataWind0
+    predictWindNot0 = dataWindNot0
+    predictWind0["windspeed"] = wind0Value
+
+    #datawind0이 아닌 데이터프레임을 합쳐준다??? 왜 데이터 프레임??
+    data = predictWindNot0.append(predictWind0)
+    data["windspeed"] = data["windspeed"].astype("float")
+
+    data.reset_index(inplace=True)
+    data.drop('index',inplace=True, axis=1)
+
+    return data
+
+  trained = predict_windspeed(train)
+
+  fig,ax1 = plt.subplots()
+  fig.set_size_inches(16,8)
+  sns.countplot(data=trained, x="windspeed",ax=ax1)
+
+  sns.regplot(x='windspeed', y='count', data=trained)
+  sns.regplot(x='windspeed', y='count', data=train)
+
+  ##feature engineering
+  #feature engi
+
+category_feature = ['season','holiday','workingday','weather','week','year','hour']
+
+for var in category_feature:
+    trained[var] = trained[var].astype("category")
+    test[var] = test[var].astype("category")
+
+feature_names= ['season','weather', 'temp', 'atemp', 'humidity', 'windspeed', 'year', 'hour', 'week', 'holiday', 'workingday']
+
+
+X_train = trained[feature_names]
+X_test = test[feature_names]
+label = 'count'
+Y_train = trained[label]
+#Y_test = test[label]
+
+### score 만들기
+from sklearn.metrics import make_scorer
+
+def rmsle(predicted_values, actual_values):
+    predicted_values = np.array(predicted_values)
+    actual_values = np.array(actual_values)
+
+    log_predict = np.log(predicted_values +1)
+    log_actuel = np.log(actual_values +1)
+
+    difference = log_predict - log_actuel
+    difference = np.square(difference)
+
+    mean_diff = difference.mean()
+    score = np.sqrt(mean_diff)
+
+    return score
+
+rmsle_scorer = make_scorer(rmsle)
+
+## k-fold
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+k_fold = KFold(n_splits=10, shuffle=True, random_state=0)
+
+from sklearn.ensemble import RandomForestRegressor
+
+max_depth_list = []
+
+##Randomforest
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes importGaussianNB
+
+model = RandomForestRegressor(n_estimators=100)
+                            n_jobs=-1,
+                            random_state=0)
+
+
+%time score = cross_val_score(model, X_train, Y_train, cv=k_fold, scoring=rmsle_scorer)
+score = score.mean()
+print("score={0:.5f}".format(score))
+
+model.fit(X_train,Y_train)
+
+predictions = model.predict(X_test)
+predictions[0:10]
+
+fig,(ax1,ax2) = plt.subplots(ncols=2)
+fig.set_size_inches(12,5)
+sns.distplot(Y_train,ax=ax1)
+sns.distplot(predictions,ax=ax2)
+
+submission = pd.read_csv('sampleSubmission.csv')
+submission["count"] = predictions
+submission.to_csv('score_{0:.5f}_submission.csv'.format(score),index=False)
+
+### LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.model_selection import GridSearchCV
+from sklearn import metrics
+
+Model= LinearRegression()
+Y_train_log = np.log1p(Y_train)
+Model.fit(X_train, Y_train_log)
+
+preds = Model.predict(X_train)
+print(rmsle(np.exp(Y_train_log), np.exp(preds)))
+
+##gradient boost
+
+gbm = GradientBoostingRegressor(n_estimators=4000, alpha=0.01);
+
+y_train_log = np.log1p(y_train)
+gbm.fit(X_train, Y_train_log)
+
+preds = gbm.predict(X_train)
+score = rmsle(np.exp(y_train_log),np.exp(preds),False)
+print(score)

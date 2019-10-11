@@ -1,3 +1,7 @@
+all_data.info()
+train.drop('atemp', axis=1, inplace=True)
+test.drop('atemp', axis=1, inplace=True)
+
 
 ['age'].fillna(df.groupby('job')['age'].transform('median'), inplace=True)
 ### random forest
@@ -23,4 +27,27 @@ df['cluster_id'] = kmeans.labels
 sns.lmplot('x','y', data=df, fit_reg = False, scatter_kws={"s":150},
 hue="cluster_id")
 
+### 결측값 처리
+In [31]: df_2['C2_New'] = np.where(pd.notnull(df_2['C2']) == True, df_2['C2'], df_2['C1'])
+
+#다중공선성
+
+from patsy import dmatrices
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_facotr
+
+features = "atemp+holiday+humidiy+season+temp+weather+windspeed+workingday+hour"
+y,x = dmatrices("count ~",features, data=train, return_type="dataframe")
+vif = [variance_inflation_factor(X.values, i) for i in range(x.shape[1])]
+
+result = sm.OLS(y,X).fit()
+print(result.summary())
+
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values) for i in range(x.shape[1])]
+vif["features"] = X.columns
+vif.round(1)
+10이 넘으면 빼줘야한다 atemp,temp
+housing.drop('totoal_bedrooms', axis=1, inplace=True)
+다만 교차검증해보며 rmse확인할것
 결측값처리,clustering,분류,예측, 전처리 이네가지만!!! sampling?

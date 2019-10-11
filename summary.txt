@@ -1,0 +1,90 @@
+for dataset in train_test_data:
+  dataset.loc[ dataset['Age'] <=16, 'Age'] =0,
+  dataset.loc[ (dataset['Age'] >16), (dataset['Age'] <= 26), 'Age'] = 1,
+  dataset.loc[ (dataset['Age'] >26), (dataset['Age'] <= 36), 'Age'] = 2,
+  dataset.loc[ (dataset['Age'] >36), (dataset['Age'] <= 62), 'Age'] = 3,
+  dataset.loc[ dataset['Age'] >62, 'Age'] =4,
+
+train["Fare"].fillna(train.groupby("pclass")["Fare"].transform("median"), inplcae=True)
+test["Fare"].fillna(test.groupby("pclass")["Fare"].transform("median"), inplcae=True)
+
+facet = sns.FacetGrid(train, hue="Survived", aspect=4)
+facet.map(sns.kdeplot,'Fare',shaed=True)
+facet.set(xlim=(0, train['fare'].max()))
+facet.add_legend()
+
+plt.show()
+
+
+###### 결측값 처리
+In [31]: df_2['C2_New'] = np.where(pd.notnull(df_2['C2']) == True, df_2['C2'], df_2['C1'])
+['age'].fillna(df.groupby('job')['age'].transform('median'), inplace=True)
+
+#다중공선성
+
+from patsy import dmatrices
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_facotr
+
+features = "atemp+holiday+humidiy+season+temp+weather+windspeed+workingday+hour"
+y,x = dmatrices("count ~",features, data=train, return_type="dataframe")
+vif = [variance_inflation_factor(X.values, i) for i in range(x.shape[1])]
+
+result = sm.OLS(y,X).fit()
+print(result.summary())
+
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(X.values) for i in range(x.shape[1])]
+vif["features"] = X.columns
+vif.round(1)
+10이 넘으면 빼줘야한다 atemp,temp
+housing.drop('totoal_bedrooms', axis=1, inplace=True)
+다만 교차검증해보며 rmse확인할것
+
+
+###svm
+clf = SVC()
+scoring = 'accuracy'
+score = cross_val_score(clf, train_data, target, cv=k_fold, n_jobs=1, scroing=scoring)
+print(score)
+
+##testing
+
+clf = SVC()
+clf.fit(train_data, target)
+
+test_data = test.drop("PassengerId", axis=1).copy()
+prediction = clf.predict(test_data)
+submission = pd.DataFrame({
+  "PassengerId": test["PassengerId"],
+  "Survived" : prediction
+})
+
+submission.to_csv('submission.csv', index=
+false)
+submission = pd.read_csv('submission.csv')
+
+
+
+### random forest
+from sklearn.ensemble import RandomForestClassifier
+
+rf = RandomForestClassifier(n_estimators=100, oob_score=True, random_state=123456)
+rf.fit(X_train, y_train)
+
+#### accuracy
+from sklearn.metrics import confusion_matrix
+
+cm = pd.DataFrame(confusion_matrix(y_test, predicted), columns=iris.target_names, index=iris.target_names)
+sns.heatmap(cm, annot=True)
+
+
+###clustering
+df = pd.DataFrame(colums=('x','y'))
+sns.lmplot('x','y', data=df, fit_reg = False, scatter_kws={"s":200})
+data_points = df.values
+kmeans = KMeans(n_clusters=3).fit(data_points)
+kmean.labels
+df['cluster_id'] = kmeans.labels
+sns.lmplot('x','y', data=df, fit_reg = False, scatter_kws={"s":150},
+hue="cluster_id")
