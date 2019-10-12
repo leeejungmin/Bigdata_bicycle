@@ -147,3 +147,11 @@ round(np.mean(score)*100,2)
 clf = GaussianNB()
 score = cross_val_score(clf, X_train, Y_train, cv=k_fold, n_jobs=1, scoring=scoring)
 round(np.mean(score)*100,2)
+
+clf.fit(X_train, Y_train)
+
+prediction = clf.predict(X_test)
+submission = pd.DataFrame({
+'passengerId': test["PassengerId'],
+"Survived':prediction})
+submission.to_csv('submission.csv',index=False)
