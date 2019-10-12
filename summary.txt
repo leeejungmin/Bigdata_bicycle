@@ -59,7 +59,7 @@ print(score)
 ###svm
 clf = SVC()
 scoring = 'accuracy'
-score = cross_val_score(clf, train_data, target, cv=k_fold, n_jobs=1, scroing=scoring)
+score = cross_val_score(clf, train_data, target, cv=k_fold, n_jobs=1, scoring=scoring)
 print(score)
 
 ##testing
@@ -104,3 +104,15 @@ kmean.labels
 df['cluster_id'] = kmeans.labels
 sns.lmplot('x','y', data=df, fit_reg = False, scatter_kws={"s":150},
 hue="cluster_id")
+
+#### split
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+X = [[0,1],[2,3],[4,5],[6,7],[8,9]]
+Y = [0,1,2,3,4]
+
+# 데이터(X)만 넣었을 경우
+X_train, X_test = train_test_split(X, test_size=0.2, random_state=123)
+# X_train : [[0,1],[6,7],[8,9],[2,3]]
+# X_test : [[4,5]]
