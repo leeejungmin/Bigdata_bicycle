@@ -216,8 +216,3 @@ gbm.fit(X_train, Y_train_log)
 preds = gbm.predict(X_train)
 score = rmsle(np.exp(y_train_log),np.exp(preds),False)
 print(score)
-
-from sklearn.preprocessing import RobustScaler
-robustScaler = RobustScaler()
-print(robustScaler.fit(train_data))
-train_data_robustScaled = robustScaler.transform(train_data)

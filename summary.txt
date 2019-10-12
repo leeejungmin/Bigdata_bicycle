@@ -25,7 +25,7 @@ plt.show()
 
 
 ###### 결측값 처리
-In [31]: df_2['C2_New'] = np.where(pd.notnull(df_2['C2']) == True, df_2['C2'], df_2['C1'])
+train['Embarked'] = np.where(pd.notnull(train['Embarked']) == True, train['Embarked'], train['Embarked'].mean())
 ['age'].fillna(df.groupby('job')['age'].transform('median'), inplace=True)
 
 #다중공선성
