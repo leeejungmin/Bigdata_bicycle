@@ -1,0 +1,58 @@
+titanic
+
+####bar_chart
+
+def bar_chart(feature):
+  survived = train[train['Survived']==1][feature].value_counts()
+  dead = train[train['Survived']==0][feature].value_counts()
+  df = pd.DataFrame([survived,dead])
+  df.index = ['Survived','Dead']
+  df.plot(kind='bar', stacked=True, figsize=(10,5))
+
+barchart('Sex')
+
+#######cabin feature
+
+train_test_data =[train,test]
+cabin_mapping = {"A": 0, "B": 0.4, "C": 0.6,"D": 0.8,"E": 1.2,"F": 1.6,"G": 2,"T": 2.4 }
+for dataset in train_test_data:
+dataset['Cabin'] = dataset['Cabin'].map(cabin_mapping)
+
+train["Cabin"].fillna(train.groupby("Pclass")["Cabin"].transform("median"), inplace=True)
+test["Cabin"].fillna(test.groupby("Pclass")["Cabin"].transform("median"), inplace=True)
+
+train["FamilySize"] = train["SibSp"] + train["Parch"] + 1
+test["FamilySize"] = test["SibSp"] + test["Parch"] + 1
+
+facet = sns.FacetGrid(train, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'FamilySize',shade= True)
+facet.set(xlim=(0, train['FamilySize'].max()))
+facet.add_legend()
+
+########sex mapping
+sex_mapping = {"male":0, "female":1}
+for dataset in train_test_data:
+  dataset['Sex'] = dataset['Sex'].map(sex_mapping)
+
+bar_chart('Sex')
+
+######### title name
+
+for dataset in train_test_data:
+  dataset['Title'] = dataset['Name'].str.extract('([A-Za-z]+)\.', expand=False)
+  train['Title'].value_counts()
+  test['Title'].value_counts()
+
+
+title_mapping = {"Mr":0,"Miss":1,"Mrs":2,
+                "Master":3,"Dr":3,"Rev":3,"Col":3,
+                "Major":3,"Mile":3,"Countess":3,"Ms":3,"Lady":3
+                ,"Jonkheer":3,"Don":3,"Dona":3,"Mme":3,"Capt":3,"Sir":3}
+
+for dataset in train_test_data:
+  dataset['Title'] = dataset['Title'].map(title_mapping)
+
+##### fare
+
+train["Fare"].fillna(train.groupby("Pclass")["Fare"].transform("median"), inplace=True)
+test["Fare"].fillna(test.groupby("Pclass")["Fare"].transform("median"), inplace=True)
